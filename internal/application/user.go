@@ -1,32 +1,31 @@
 package application
 
-import "fmt"
+import (
+	"tweet-ddd-factory/internal/domain/model"
+)
 
-type User struct {
-	ID       int64
-	IsFamous bool
+type EventPublisher interface {
+	PublishTweet(model.User, model.Tweet)
 }
 
-type TweetTableGateway interface {
-	CreateTweet(user User, text string) error
+type Logger interface {
+	Debug(string)
+	Error(string, error)
 }
 
 type UserService struct {
-	tweetTableGateway TweetTableGateway
+	logger         Logger
+	eventPublisher EventPublisher
 }
 
-func (u *UserService) CreateTweet(user User, tweet string) error {
-	charactersLimit := 140
-	if user.IsFamous {
-		charactersLimit = 280
+func (u *UserService) CreateTweet(user model.User, content string) error {
+	tweet, err := user.CreateTweet(content)
+	if err != nil {
+		u.logger.Error("could not create tweet", err)
+		return err
 	}
 
-	if len(tweet) > charactersLimit {
-		return fmt.Errorf(
-			"max characters exceeded. Received: %d. Max: %d",
-			len(tweet), charactersLimit,
-		)
-	}
+	u.eventPublisher.PublishTweet(user, tweet)
 
-	return u.tweetTableGateway.CreateTweet(user, tweet)
+	return nil
 }
