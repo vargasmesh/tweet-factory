@@ -1,9 +1,5 @@
 package model
 
-import (
-	"fmt"
-)
-
 type TweetRepository interface {
 	Save(Tweet) (int64, error)
 }
@@ -14,18 +10,14 @@ type Tweet struct {
 	User    User
 
 	repository TweetRepository
+	validators []tweetValidator
 }
 
-func NewTweet(user User, content string, repository TweetRepository) *Tweet {
-	return &Tweet{Content: content, User: user, repository: repository}
-}
-
-func (t Tweet) Validate(maxCharacters int) error {
-	if len(t.Content) > maxCharacters {
-		return fmt.Errorf(
-			"max characters exceeded. Received: %d. Max: %d",
-			len(t.Content), maxCharacters,
-		)
+func (t Tweet) Validate() error {
+	for _, validator := range t.validators {
+		if err := validator(t); err != nil {
+			return err
+		}
 	}
 
 	return nil

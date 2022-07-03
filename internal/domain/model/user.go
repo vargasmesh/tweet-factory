@@ -4,18 +4,13 @@ type User struct {
 	ID       int64
 	IsFamous bool
 
-	tweetRepository TweetRepository
+	tweetFactory TweetFactory
 }
 
 func (u *User) CreateTweet(content string) (Tweet, error) {
-	charactersLimit := 140
-	if u.IsFamous {
-		charactersLimit = 280
-	}
+	tweet := u.tweetFactory.NewTweet(*u, content)
 
-	tweet := NewTweet(*u, content, u.tweetRepository)
-
-	err := tweet.Validate(charactersLimit)
+	err := tweet.Validate()
 	if err != nil {
 		return Tweet{}, err
 	}
