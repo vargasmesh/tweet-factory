@@ -1,7 +1,5 @@
 package model
 
-import "fmt"
-
 type User struct {
 	ID       int64
 	IsFamous bool
@@ -9,27 +7,23 @@ type User struct {
 	tweetRepository TweetRepository
 }
 
-type TweetRepository interface {
-	Create(User, string) (Tweet, error)
-}
-
-type Tweet struct {
-	ID      int64
-	Content string
-}
-
-func (u *User) CreateTweet(tweet string) (Tweet, error) {
+func (u *User) CreateTweet(content string) (Tweet, error) {
 	charactersLimit := 140
 	if u.IsFamous {
 		charactersLimit = 280
 	}
 
-	if len(tweet) > charactersLimit {
-		return Tweet{}, fmt.Errorf(
-			"max characters exceeded. Received: %d. Max: %d",
-			len(tweet), charactersLimit,
-		)
+	tweet := NewTweet(*u, content, u.tweetRepository)
+
+	err := tweet.Validate(charactersLimit)
+	if err != nil {
+		return Tweet{}, err
 	}
 
-	return u.tweetRepository.Create(*u, tweet)
+	err = tweet.Save()
+	if err != nil {
+		return Tweet{}, err
+	}
+
+	return *tweet, nil
 }
